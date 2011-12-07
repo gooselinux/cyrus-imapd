@@ -1,0 +1,49 @@
+diff -up cyrus-imapd-2.3.16/lib/imapoptions.fixmanpage cyrus-imapd-2.3.16/lib/imapoptions
+--- cyrus-imapd-2.3.16/lib/imapoptions.fixmanpage	2010-06-10 14:19:43.504996313 +0200
++++ cyrus-imapd-2.3.16/lib/imapoptions	2010-06-10 14:27:31.631059729 +0200
+@@ -873,18 +873,18 @@ Blank lines and lines beginning with ``#
+ 
+ { "popuseacl", 0, SWITCH }
+ /* Enforce IMAP ACLs in the pop server.  Due to the nature of the POP3
+-   protocol, the only rights which are used by the pop server are 'r',
+-   't', and 's' for the owner of the mailbox.  The 'r' right allows the
++   protocol, the only rights which are used by the pop server are 'r', 't',
++   and 's' for the owner of the mailbox.  The 'r' right allows the
+    user to open the mailbox and list/retrieve messages.  The 't' right
+    allows the user to delete messages.  The 's' right allows messages
+-   retrieved by the user to have the \Seen flag set (only if
++   retrieved by the user to have the seen flag set (only if
+    \fIpopuseimapflags\fR is also enabled). */
+ 
+ { "popuseimapflags", 0, SWITCH }
+ /* If enabled, the pop server will set and obey IMAP flags.  Messages
+-   having the \Deleted flag are ignored as if they do not exist.
+-   Messages that are retrieved by the client will have the \Seen flag
+-   set.  All messages will have the \Recent flag unset. */
++   having the deleted flag are ignored as if they do not exist.
++   Messages that are retrieved by the client will have the seen flag
++   set.  All messages will have the recent flag unset. */
+ 
+ { "postmaster", "postmaster", STRING }
+ /* Username that is used as the 'From' address in rejection MDNs produced
+@@ -1293,5 +1293,5 @@ product version in the capabilities */
+ .PP
+ \fBimapd(8)\fR, \fBpop3d(8)\fR, \fBnntpd(8)\fR, \fBlmtpd(8)\fR,
+ \fBtimsieved(8)\fR, \fBidled(8)\fR, \fBnotifyd(8)\fR,
+-\fBdeliver(8)\fR, \fBmaster(8)\fR, \fBciphers(1)\fR
++\fBdeliver(8)\fR, \fBcyrus-master(8)\fR, \fBciphers(1)\fR
+ */
+diff -up cyrus-imapd-2.3.16/man/cyr_dbtool.8.fixmanpage cyrus-imapd-2.3.16/man/cyr_dbtool.8
+--- cyrus-imapd-2.3.16/man/cyr_dbtool.8.fixmanpage	2010-06-10 14:28:19.365234761 +0200
++++ cyrus-imapd-2.3.16/man/cyr_dbtool.8	2010-06-10 14:28:19.401183733 +0200
+@@ -79,8 +79,8 @@ terminated by tab or newline, values are
+ Running without any options will list the available database backends and
+ usable actions.
+ .PP
+-The 'consistency' command runs a consistency check on the DB by calling
+-'myconsistent' on it.
++The 'consistency' command runs a consistency check on the DB by 
++calling 'myconsistent' on it.
+ .PP
+ .I cyr_dbtool
+ reads any applicable configuration options out of the

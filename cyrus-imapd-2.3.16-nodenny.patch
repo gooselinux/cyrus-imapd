@@ -1,0 +1,26 @@
+diff -up cyrus-imapd-2.3.16/imap/global.c.nodenny cyrus-imapd-2.3.16/imap/global.c
+--- cyrus-imapd-2.3.16/imap/global.c.nodenny	2009-10-13 17:10:36.000000000 +0200
++++ cyrus-imapd-2.3.16/imap/global.c	2010-01-14 14:00:10.455808186 +0100
+@@ -542,14 +542,22 @@ static int acl_ok(const char *user, stru
+ int access_ok(const char *user, const char *service, char *msgbuf, int size)
+ {
+     static char *fname = NULL;
++    static int nodb = 0;
+     struct db *db = NULL;
+     int r, ret = 1;  /* access always granted by default */
+ 
++    if (nodb) return ret;
++
+     if (!fname) {
++	struct stat s;
+ 	/* create path to database */
+ 	fname = xmalloc(strlen(config_dir) + sizeof(FNAME_USERDENYDB) + 1);
+ 	strcpy(fname, config_dir);
+ 	strcat(fname, FNAME_USERDENYDB);
++	if (stat(fname, &s) == -1 && errno==ENOENT) {
++	    nodb = 1;
++	    return ret;
++	}
+     }
+ 
+     /* try to open database */

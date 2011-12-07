@@ -1,0 +1,159 @@
+#!/bin/sh
+#
+# chkconfig: - 65 35
+# description: The Cyrus IMAPD master serves as a master process for the Cyrus \
+#              IMAP and POP servers.
+# config: /etc/cyrus.conf
+# config: /etc/imapd.conf
+# pidfile: /var/run/cyrus-master.pid
+
+# author:	Simon Matter, Invoca Systems <simon.matter@invoca.ch>
+# version:	2005111100
+# changed:	add quickstart/stop option to init script to bypass db import/export
+
+. /etc/init.d/functions
+
+config=/etc/imapd.conf
+config2=/etc/cyrus.conf
+exec=/usr/lib/cyrus-imapd/cyrus-master
+lockfile=/var/lock/subsys/cyrus-imapd
+pidfile=/var/run/cyrus-master.pid
+prog="cyrus-imapd"
+
+if [ -f /etc/sysconfig/$prog ]; then
+    . /etc/sysconfig/$prog
+fi
+
+# check if the config files are present
+configok=true
+[ -f $config -a $config2 ] || configok=false
+ 
+# get_config [config default]
+# extracts config option from config file
+get_config() {
+  if conf=$(grep "^$1" /etc/imapd.conf); then
+    echo $conf | cut -d: -f2
+  else
+    echo $2
+  fi
+}
+
+# where to find files and directories
+CONFIGDIRECTORY=$(get_config configdirectory /var/lib/imap)
+CYRUSMASTER=/usr/lib/cyrus-imapd/cyrus-master
+CYRUS_PROC_NAME=$(basename $CYRUSMASTER)
+ALWAYS_CONVERT=1
+
+RETVAL=0
+RETVAL2=1
+QUICK=0
+
+start() {
+  [ $UID -eq 0 ] || exit 4
+  [ -x $exec ] || exit 5
+  $configok || exit 6
+  if [ $(/sbin/pidof -s $CYRUSMASTER) ]; then
+    echo -n $"$prog already running."
+    true
+    echo
+  else
+    if [ $QUICK -eq 0 ]; then
+      echo -n $"Importing $prog databases: "
+      cd $CONFIGDIRECTORY
+      runuser - cyrus -s /bin/sh -c "umask 166 ; /usr/lib/cyrus-imapd/cvt_cyrusdb_all > ${CONFIGDIRECTORY}/rpm/db_import.log 2>&1" < /dev/null
+      RETVAL=$?
+      if [ $RETVAL -eq 0 ]; then
+        success $"$prog importing databases"
+      else
+        failure $"$prog error importing databases, check ${CONFIGDIRECTORY}/rpm/db_import.log"
+      fi
+      echo
+    fi
+    if [ $RETVAL -eq 0 ]; then
+      echo -n $"Starting $prog: "
+      daemon $CYRUSMASTER -d $CYRUSOPTIONS
+      RETVAL2=$?
+      echo
+    fi
+  fi
+  [ $RETVAL -eq 0 -a $RETVAL2 -eq 0 ] && touch $lockfile
+  return $RETVAL
+}
+
+stop() {
+  [ $UID -eq 0 ] || exit 4
+  [ -x $exec ] || exit 5
+
+  echo -n $"Shutting down $prog: "
+  killproc $CYRUSMASTER
+  RETVAL=$?
+  if [ $QUICK -eq 0 ]; then
+    if [ ! $(/sbin/pidof -s $CYRUSMASTER) ]; then
+      echo
+      echo -n $"Exporting $prog databases: "
+      cd $CONFIGDIRECTORY
+      runuser - cyrus -s /bin/sh -c "umask 166 ; /usr/lib/cyrus-imapd/cvt_cyrusdb_all export > ${CONFIGDIRECTORY}/rpm/db_export.log 2>&1" < /dev/null
+      RETVAL2=$?
+      if [ $RETVAL2 -eq 0 ]; then
+        success $"$prog exporting databases"
+      else
+        failure $"$prog error exporting databases, check ${CONFIGDIRECTORY}/rpm/db_export.log"
+      fi
+    fi
+  fi
+  echo
+  [ $RETVAL -eq 0 -a $RETVAL2 -eq 0 ] && rm -f $lockfile
+  return $RETVAL
+}
+
+restart() {
+  stop
+  start
+}
+
+reload() {
+  echo -n $"Reloading cyrus.conf file: "
+  killproc $CYRUSMASTER -HUP
+  RETVAL=$?
+  echo
+  return $RETVAL
+}
+ 
+case "$1" in
+  start)
+    start
+    ;;
+  stop)
+    stop
+    ;;
+  force-reload|restart)
+    restart
+    ;;
+  reload)
+    reload
+    ;;
+  condrestart|try-restart)
+    if [ -f $lockfile ]; then
+        stop
+        start
+    fi
+    ;;
+  status)
+    status -p $pidfile $prog 
+    RETVAL=$?
+    ;;
+  quickstart)
+    QUICK=1
+    start
+    ;;
+  quickstop)
+    QUICK=1
+    stop
+    ;;
+  *)
+    echo $"Usage: $0 {start|stop|restart|reload|force-reload|condrestart|try-restart|status|quickstart|quickstop}"
+    RETVAL=2
+    [ "$1" = "usage" ] && RETVAL=0
+esac
+
+exit $RETVAL

@@ -1,0 +1,30 @@
+--- cyrus-imapd-2.3.13/imap/make_md5.c.make_md5_defaults	2008-10-02 16:05:44.000000000 +0200
++++ cyrus-imapd-2.3.13/imap/make_md5.c	2009-01-13 11:44:24.000000000 +0100
+@@ -857,7 +857,7 @@
+     if (!md5_dir) md5_dir = config_getstring(IMAPOPT_MD5_DIR);
+ 
+     if (!md5_dir)
+-        md5_dir = xstrdup("/var/imap/md5");
++        md5_dir = xstrdup("/var/lib/imap/md5");
+ 
+     if (max_children == 0) {
+         /* Simple case */
+--- cyrus-imapd-2.3.13/lib/imapoptions.make_md5_defaults	2009-01-13 11:44:24.000000000 +0100
++++ cyrus-imapd-2.3.13/lib/imapoptions	2009-01-13 14:17:35.000000000 +0100
+@@ -634,10 +634,14 @@
+    mailspool, but each have their own "replicated" copy of
+    mailboxes.db. */
+ 
+-{ "md5_dir", NULL, STRING }
++{ "md5_dir", "/var/lib/imap/md5", STRING }
+ /* Top level directory for MD5 store manipulated by make_md5. File
+    structure within this directory is one file for each user on the system,
+-   hashed on the first letter of the userid (e.g., /var/imap/md5/d/dpc22). */
++   hashed on the first letter of the
++   userid (e.g., /var/imap/md5/d/dpc22).
++.PP   
++   Note: This Invoca RPM build uses \fI/var/lib/imap/md5\fR by default 
++   instead of \fI/var/imap/md5\fR for \fBmd5_dir\fR. */
+ 
+ { "md5_user_map", NULL, STRING }
+ /* Map file (cdb) to allow partial make_md5 runs. Maps username to UID */
